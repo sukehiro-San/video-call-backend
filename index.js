@@ -89,7 +89,7 @@ const generateRTMAccessToken = (req, res) => {
   let token = RtmTokenBuilder.buildToken(
     APP_ID,
     APP_CERTIFICATE,
-    "sunnykewat3@gmail.com",
+    "app_test_acc",
     expireTime,
     privilegeExpireTime
   );
