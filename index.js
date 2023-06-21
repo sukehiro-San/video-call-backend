@@ -1,6 +1,7 @@
 require("dotenv").config();
 const app = require("express")();
-const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
+
+const { RtcRole, RtmTokenBuilder, RtcTokenBuilder } = require("agora-token");
 const cors = require("cors");
 
 const PORT = process.env.PORT;
@@ -15,7 +16,7 @@ const nocache = (req, res, next) => {
   next();
 };
 
-const generateAccessToken = (req, res) => {
+const generateRTCAccessToken = (req, res) => {
   // Set Response Header
   res.header("Access-Control-Allow-Origin", "*");
   // Get Channel Name
@@ -56,17 +57,50 @@ const generateAccessToken = (req, res) => {
     channelName,
     UID,
     role,
+    expireTime,
     privilegeExpireTime
   );
 
   // Return the Token
-  return res.json({ token: token });
+  return res.json({ rtctoken: token });
+};
+
+const generateRTMAccessToken = (req, res) => {
+  // Set Response Header
+  res.header("Access-Control-Allow-Origin", "*");
+
+  // Get Role
+
+  if (req.query.role === "publisher") {
+    role = RtcRole.PUBLISHER;
+  }
+  // Get the Expire Time
+  let expireTime = req.query.expireTime;
+  if (!expireTime || expireTime === "") {
+    expireTime = 3600;
+  } else {
+    expireTime = parseInt(expireTime, 10);
+  }
+  // Calculate Privilege Expiration time since 1970
+  let currentTime = Math.floor(Date.now() / 1000);
+  let privilegeExpireTime = currentTime + expireTime;
+
+  // Build the Token
+  let token = RtmTokenBuilder.buildToken(
+    APP_ID,
+    APP_CERTIFICATE,
+    "sunnykewat3@gmail.com",
+    expireTime,
+    privilegeExpireTime
+  );
+
+  // Return the Token
+  return res.json({ rtmtoken: token });
 };
 app.get("/", (req, res) => {
   res.send("Hello");
 });
-app.get("/access_token", nocache, generateAccessToken);
+app.get("/access_token/rtc", nocache, generateRTCAccessToken);
+app.get("/access_token/rtm", nocache, generateRTMAccessToken);
 
-app.listen(PORT, () =>
-  console.log("Server listening on port: ", PORT)
-);
+app.listen(PORT, () => console.log("Server listening on port: ", PORT));
