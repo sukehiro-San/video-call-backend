@@ -1,5 +1,6 @@
 require("dotenv").config();
 const app = require("express")();
+const { v4: uid4, validate: validateUid } = require("uuid");
 
 const { RtcRole, RtmTokenBuilder, RtcTokenBuilder } = require("agora-token");
 const cors = require("cors");
@@ -20,15 +21,19 @@ const generateRTCAccessToken = (req, res) => {
   // Set Response Header
   res.header("Access-Control-Allow-Origin", "*");
   // Get Channel Name
-  let channelName = req.query.channelName;
-  if (!channelName || channelName === "") {
+  let channelName;
+
+  if (validateUid(req.query.channelName)) {
+    channelName = req.query.channelName;
+  } else if (req.query.channelName === "") {
+    channelName = uid4();
+  } else if (!req.query.channelName) {
     return res.status(500).json({
-      error: {
-        type: "channelName:required",
-        message: "Please provide a valid channel name to join the call",
-      },
+      type: "channelName:required",
+      message: "Please provide a channel ID",
     });
   }
+
   // Get UID
   let UID = req.query.uid;
   if (!UID || UID === "") {
@@ -62,7 +67,7 @@ const generateRTCAccessToken = (req, res) => {
   );
 
   // Return the Token
-  return res.json({ rtctoken: token });
+  return res.json({ rtctoken: token, channel: channelName });
 };
 
 const generateRTMAccessToken = (req, res) => {
